@@ -10,9 +10,11 @@ struct Plate final {
 };
 
 struct Voxel final {
-    int32_t height;
+	int32_t x;
+	int32_t y;
+    int32_t z;
     int plate_ref;
-    char color;
+    uint8_t color;
 };
 
 using Map = std::vector<std::vector<Voxel>>;

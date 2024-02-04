@@ -96,7 +96,7 @@ Chunk id 'XYZI' : model voxels, paired with the SIZE chunk
     write_uint32_t(0); // num bytes of children chunks
     for (int x = 0; x < map.size(); x++) {
         for (int y = 0; y < map[0].size(); y++) {
-            for (int z = 0; z < map[x][y].height; z++) {
+            for (int z = 0; z < map[x][y].z; z++) {
                 uint32_t c = map[x][y].color;
                 uint32_t pos_and_color =
                     ((x & 0xff) << 24) |
@@ -115,8 +115,8 @@ VoxWriter::calculate_model_size(const Map &map) const {
     int32_t voxel_count = 0;
     for (const auto &vector: map) {
         for (const auto &voxel: vector) {
-            max_sizez = std::max(max_sizez, voxel.height);
-            voxel_count += voxel.height;
+            max_sizez = std::max(max_sizez, voxel.z);
+            voxel_count += voxel.z;
         }
     }
     LOG(std::cout << "Max landscape height is: " << max_sizez << '\n';);

@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
     vox::VoxWriter vox;
     for (int32_t x = 0; x < landscape.size(); ++x) {
         for (int32_t y = 0; y < landscape[0].size(); ++y) {
-            for (int32_t z = 0; z < landscape[x][y].height; z++) {
+            for (int32_t z = 0; z < landscape[x][y].z; z++) {
                 vox.AddVoxel(x, y, z, landscape[x][y].color);
             }
         }

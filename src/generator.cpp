@@ -1,17 +1,40 @@
 #include <random>
 #include <cstdlib>
 #include <algorithm>
+#include <cassert>
 #include "generator.h"
 #include "logger.h"
 
 using namespace generation;
 
+namespace {
+    struct Point {
+        int x;
+        int y;
+    };
+
+    int get_random_number_in_range(int l, int r) {
+        std::random_device rd; // obtain a random number from hardware
+        std::mt19937 gen(rd()); // seed the generator
+        std::uniform_int_distribution<> distr(l, r); // define the range
+        return distr(gen);
+    }
+
+    Point create_random_point(int xmin, int xmax, int ymin, int ymax) {
+        return { get_random_number_in_range(xmin, xmax) ,
+                 get_random_number_in_range(ymin, ymax) };
+    }
+
+}
+
+
 void Generator::generate() {
     LOG(std::cout << "Generation process started\n";);
     setup_map();
     split_map();
-    set_height();
     set_properties();
+    set_height();
+    generate_elements();
     simulate();
 }
 
@@ -21,7 +44,17 @@ Map Generator::get_result() const {
 
 void Generator::setup_map() {
     LOG(std::cout << "Setting up map...\n";);
-    map.resize(sizex, std::vector<Voxel>(sizey, {1, -1, 0}));
+    map.resize(sizex, std::vector<Voxel>(sizey));
+    for (int x = 0; x < sizex; x++) {
+        for (int y = 0; y < sizey; y++) {
+            Voxel &vox = map[x][y];
+            vox.color = 0;
+            vox.plate_ref = -1;
+            vox.x = x;
+            vox.y = y;
+            vox.z = 0;
+        }
+    }
     long long space = sizex * 1ll *sizey;
     int plates_count = get_random_number_in_range(5, 15);
     plates.resize(plates_count);
@@ -30,17 +63,13 @@ void Generator::setup_map() {
 void Generator::split_map() {
     LOG(std::cout << "Split map into " << plates.size() << " plates...\n";);
 
-    struct Point {
-        int x;
-        int y;
-    };
-
-    std::vector<Point> points(plates.size());
+    std::vector<Point> points;
+    points.reserve(plates.size());
     // generate random points on plate to calcalute
     // Voronoi diagram depending on them.
-    for(auto &p: points) {
-        p.x = get_random_number_in_range(0, map.size());
-        p.y = get_random_number_in_range(0, map[0].size());
+    for(int i = 0; i < plates.size(); i++) {
+        points.emplace_back(
+                create_random_point(0, map.size(), 0, map[0].size()));
     }
 
     // Discrete voronoi diagram
@@ -70,28 +99,205 @@ void Generator::set_properties() {
     plates[0].is_edge = true;
 }
 
+void generation::Generator::generate_elements() {
+
+#ifdef DEBUG
+    int basins_cnt = 1;
+#else
+    int basins_cnt = get_random_number_in_range(0, 3);
+#endif
+    for (int i = 0; i < basins_cnt; i++) {
+        int radius = get_random_number_in_range(
+                            DeepSeaBasin::min_radius,
+                            DeepSeaBasin::max_radius);
+        assert(radius + 1 < map.size() - radius - 1);
+        int x = get_random_number_in_range(radius + 1, map.size() - radius - 1);
+        assert(radius + 1 < map[0].size() - radius - 1);
+        int y = get_random_number_in_range(radius + 1,
+                                           map[0].size() - radius - 1);
+        LOG(std::cout << "Add DeepSeaBasin { "
+                      << x << ", " << y << ", " << radius << " }\n";);
+        elements.emplace_back(
+            std::make_unique<DeepSeaBasin>(&map[x][y], map, radius));
+    }
+}
+
 void Generator::set_height() {
     LOG(std::cout << "Set heights...\n";);
     for(int i = 0; i < sizex; i++) {
         for(int j = 0; j < sizey; j++) {
-            map[i][j].height = 10;
+            map[i][j].z = 100;
             // Palette has only 256 colors
-            map[i][j].color = map[i][j].plate_ref % 256;
+            map[i][j].color = (map[i][j].plate_ref + 1) % 256;
         }
+        LOG(std::cout << "");
     }
 }
 
 void Generator::simulate() {
+
     LOG(std::cout << "Simulation started...\n";);
     for(int delta_years = 100, current_year = 0; current_year < years;
         current_year += delta_years) {
-        LOG(std::cout << "Years passed:" << current_year << '\n';);
+        if (current_year % 1000 == 0) {
+            LOG(std::cout << "Years passed:" << current_year << '\n';);
+        }
+        for (auto &landscape: elements) {
+            landscape->generation_step(delta_years);
+        }
     }
 }
 
-int Generator::get_random_number_in_range(int l, int r) const {
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_int_distribution<> distr(l, r); // define the range
-    return distr(gen);
+#define COMMON_CALC(map, center, radius) \
+    const int x0 = center->x; \
+    const int y0 = center->y; \
+    \
+    const int xmin = std::max(0, x0 - radius); \
+    const int xmax = std::min(map.size(), \
+                              static_cast<size_t>(x0 + radius + 1)); \
+    \
+    const int ymin = std::max(0, y0 - radius); \
+    const int ymax = std::min(map[0].size(), \
+                              static_cast<size_t>(y0 + radius + 1)); \
+    const long long  rsq = radius*1ll*radius;
+
+void DeepSeaBasin::init() {
+
+    COMMON_CALC(map, center, radius);
+
+#ifdef DEBUG
+    delay_years = 0;
+#else
+    delay_years = get_random_number_in_range(0, 5000);
+#endif
+
+    for (int x = xmin; x < xmax; x++) {
+        for (int y = ymin; y < ymax; y++) {
+            int dx = x - x0;
+            int dy = y - y0;
+            Voxel &vox = map[x][y];
+            if (dx *1ll*dx + dy*1ll*dy <= rsq) {
+                vox.color = 255 - vox.color; // change color to see difference
+            }
+        }
+    }
+    generate_guyots();
 }
+
+void DeepSeaBasin::generation_step(int years_delta) {
+
+    // Add some random delay to generation
+    // to get different results.
+    if (delay_years > years_delta) {
+        delay_years -= years_delta;
+        return;
+    }
+
+    gen_years += years_delta;
+    int current_shift = 0;
+    if (gen_years / year_per_vox_shift > shift_already) {
+        current_shift = gen_years / year_per_vox_shift - shift_already;
+        assert(current_shift >= 0);
+    }
+
+    if (!current_shift) return;
+
+    COMMON_CALC(map, center, radius);
+
+    for (int x = xmin; x < xmax; x++) {
+        for (int y = ymin; y < ymax; y++) {
+            int dx = x - x0;
+            int dy = y - y0;
+            Voxel &vox = map[x][y];
+            if (vox.z >= current_shift && dx * 1ll * dx + dy * 1ll *dy <= rsq) {
+                vox.z -= current_shift;
+            }
+        }
+    }
+    shift_already += current_shift;
+
+    for (auto &g: guyots) {
+        g.generation_step();
+    }
+}
+
+void DeepSeaBasin::generate_guyots() {
+    int guyots_count = radius / min_radius;
+    for (int i = 0; i < guyots_count; i++) {
+        int g_r = get_random_number_in_range(Guyot::min_radius,
+                                             Guyot::max_radius);
+        int g_x = get_random_number_in_range(center->x,
+                                             center->x + radius - g_r);
+        int g_y = get_random_number_in_range(center->y,
+                                             center->y + radius - g_r);
+        LOG(std::cout << "Add guyot {" << g_x << ", " << g_y << ", " << g_r
+                      << " }\n"
+                      << "to basin { " << center->x << ", " << center->y
+                      << " }\n";);
+        assert(g_x > 0 && g_x < map.size());
+        assert(g_y > 0 && g_y < map[0].size());
+        guyots.emplace_back(&map[g_x][g_y], map, g_r);
+    }
+}
+
+int DeepSeaBasin::min_radius = 50;
+int DeepSeaBasin::max_radius = 100;
+int DeepSeaBasin::year_per_vox_shift = 2000;
+
+void DeepSeaBasin::Guyot::init() {
+
+#ifdef DEBUG
+    delay_years = 0;
+#else
+    delay_years = get_random_number_in_range(0, 1000);
+#endif
+
+    COMMON_CALC(map, center, radius);
+    zero_level = map[xmin][ymin].z;
+    for (int x = xmin; x < xmax; x++) {
+        for (int y = ymin; y < ymax; y++) {
+            int dx = std::abs(x - x0);
+            int dy = std::abs(y - y0);
+            Voxel &vox = map[x][y];
+            if (dx *1ll*dx + dy*1ll*dy <= rsq) {
+                vox.color = 255 - vox.color; // change color to see difference
+                vox.z = zero_level + height - std::max(dx, dy) * height_multiplier;
+            }
+        }
+    }
+
+}
+
+void DeepSeaBasin::Guyot::generation_step() {
+
+    // We get here each time DeepSeaBasin make shift.
+    zero_level--;
+
+    // Add some random delay to generation
+    // to get different results.
+    if (delay_years > DeepSeaBasin::year_per_vox_shift) {
+        delay_years -= DeepSeaBasin::year_per_vox_shift;
+        return;
+    }
+
+    // Remove one level on every step
+
+    COMMON_CALC(map, center, radius);
+
+    for (int x = xmin; x < xmax; x++) {
+        for (int y = ymin; y < ymax; y++) {
+            int dx = x - x0;
+            int dy = y - y0;
+            Voxel &vox = map[x][y];
+            if (vox.z == zero_level + height && dx *1ll*dx + dy*1ll*dy <= rsq) {
+                vox.z--;
+            }
+        }
+    }
+    height--;
+}
+
+int DeepSeaBasin::Guyot::min_radius = 20;
+int DeepSeaBasin::Guyot::max_radius = 30;
+
+#undef COMMON_CALC

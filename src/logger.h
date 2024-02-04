@@ -1,8 +1,8 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#ifdef DEBUG
-
+//#ifdef DEBUG
+#if 1
 #include <iostream>
 
 #define LOG(x) do { x; } while (0)
