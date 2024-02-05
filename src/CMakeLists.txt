@@ -12,6 +12,8 @@ set(SOURCE_FILES
     vox_writer.h
     logger.h
     common.h
+    utils.cpp
+    utils.h
     )
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})

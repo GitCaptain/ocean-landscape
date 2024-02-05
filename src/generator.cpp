@@ -1,32 +1,11 @@
-#include <random>
 #include <cstdlib>
 #include <algorithm>
 #include <cassert>
 #include "generator.h"
 #include "logger.h"
+#include "utils.h"
 
 using namespace generation;
-
-namespace {
-    struct Point {
-        int x;
-        int y;
-    };
-
-    int get_random_number_in_range(int l, int r) {
-        std::random_device rd; // obtain a random number from hardware
-        std::mt19937 gen(rd()); // seed the generator
-        std::uniform_int_distribution<> distr(l, r); // define the range
-        return distr(gen);
-    }
-
-    Point create_random_point(int xmin, int xmax, int ymin, int ymax) {
-        return { get_random_number_in_range(xmin, xmax) ,
-                 get_random_number_in_range(ymin, ymax) };
-    }
-
-}
-
 
 void Generator::generate() {
     LOG(std::cout << "Generation process started\n";);
@@ -101,11 +80,13 @@ void Generator::set_properties() {
 
 void generation::Generator::generate_elements() {
 
+    // Generate DeapSeaBasins
 #ifdef DEBUG
     int basins_cnt = 1;
 #else
     int basins_cnt = get_random_number_in_range(0, 3);
 #endif
+
     for (int i = 0; i < basins_cnt; i++) {
         int radius = get_random_number_in_range(
                             DeepSeaBasin::min_radius,
@@ -120,6 +101,28 @@ void generation::Generator::generate_elements() {
         elements.emplace_back(
             std::make_unique<DeepSeaBasin>(&map[x][y], map, radius));
     }
+
+    // Generate MidOceanRidge
+#ifdef DEBUG
+    int ridge_cnt = 1;
+#else
+    int ridge_cnt = get_random_number_in_range(0, 2);
+#endif
+    for (int i = 0; i < ridge_cnt; i++) {
+        int x = get_random_number_in_range(0, map.size());
+        int y = get_random_number_in_range(0, map[0].size());
+        LOG(std::cout << "Add MidOceanRidge { " << x << ", " << y << " }\n";);
+        elements.emplace_back(
+            std::make_unique<MidOceanRidge>(map, x, y));
+    }
+
+    // Generate ContinentalMargin
+#ifdef DEBUG
+    int margin_cnt = 1;
+#else
+    int margin_cnt = get_random_number_in_range(0, 1);
+#endif
+
 }
 
 void Generator::set_height() {
@@ -301,3 +304,29 @@ int DeepSeaBasin::Guyot::min_radius = 20;
 int DeepSeaBasin::Guyot::max_radius = 30;
 
 #undef COMMON_CALC
+
+void MidOceanRidge::init(int x, int y) {
+
+#ifdef DEBUG
+    delay_years = 0;
+#else
+    delay_years = get_random_number_in_range(0, 5000);
+#endif
+
+    auto opt_edge = bfs(map, Point(x, y));
+    if (!opt_edge.has_value()) {
+        return;
+    }
+    // fill int path from this point
+}
+
+void MidOceanRidge::generation_step(int years_delta) {
+
+    if (delay_years > years_delta) {
+        delay_years -= years_delta;
+        return;
+    }
+
+
+
+}

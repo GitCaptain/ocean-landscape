@@ -107,10 +107,18 @@ private:
 
 class MidOceanRidge final: public LandscapeElement {
 public:
-    MidOceanRidge() {}
+    MidOceanRidge(Map &map, int x, int y): map(map) {
+        init(x, y);
+    }
 
     void generation_step(int years_delta) override;
 
+private:
+
+    void init(int x, int y);
+    int delay_years;
+    Map &map;
+    std::vector<Voxel*> path;
 };
 
 class ContinentalMargin final: public LandscapeElement {
