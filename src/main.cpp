@@ -78,10 +78,10 @@ int main(int argc, char **argv) {
         return 1;
     }
     const auto [x, y, years, file] = *parsed_input;
-    LOG(std::cout << "INPUT: x = " << x
-             << ", y = " << y
-             << ", ye = " << years
-             << ", file = " << file << '\n');
+    LOG_DEBUG(std::cout << "INPUT: x = " << x
+                        << ", y = " << y
+                        << ", ye = " << years
+                        << ", file = " << file << '\n');
 
     generation::Generator g{x, y, years};
     g.generate();
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     vw.write(landscape, file);
 
 #else
-    LOG(std::cout << "Start writing to file\n");
+    LOG_INFO(std::cout << "Start writing to file\n";);
     vox::VoxWriter vox;
     for (int32_t x = 0; x < landscape.size(); ++x) {
         for (int32_t y = 0; y < landscape[0].size(); ++y) {
@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
             }
         }
     }
+    LOG_DEBUG(std::cout << "Start saving file\n";);
     vox.SaveToFile(file.data());
 #endif
 

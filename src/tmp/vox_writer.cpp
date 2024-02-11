@@ -7,7 +7,7 @@
 // https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
 
 void VoxWriter::write(Map &map, std::string_view filename) {
-    LOG(std::cout << "Writing result to the " << filename << '\n';);
+    LOG_INFO(std::cout << "Writing result to the " << filename << '\n';);
     outfile.open(filename.data(), std::ios::binary);
     write_content(map);
 }
@@ -119,8 +119,8 @@ VoxWriter::calculate_model_size(const Map &map) const {
             voxel_count += voxel.z;
         }
     }
-    LOG(std::cout << "Max landscape height is: " << max_sizez << '\n';);
-    LOG(std::cout << "Overall voxels in model: " << voxel_count << '\n';);
+    LOG_DEBUG(std::cout << "Max landscape height is: " << max_sizez << '\n';);
+    LOG_DEBUG(std::cout << "Overall voxels in model: " << voxel_count << '\n';);
     return {max_sizez, voxel_count};
 }
 

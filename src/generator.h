@@ -3,6 +3,9 @@
 
 #include <vector>
 #include <memory>
+#include <utility>
+#include <map>
+#include <set>
 #include "common.h"
 
 namespace generation {
@@ -14,9 +17,13 @@ Resolution: 1 voxel = 20 meters
 class LandscapeElement {
 
 public:
-
-    virtual void generation_step(int years_delta) = 0;
+    void do_iteration(int years_delta);
     virtual ~LandscapeElement() = default;
+
+protected:
+    virtual void generation_step(int years_delta) = 0;
+
+    int delay_years = 0;
 };
 
 class Generator final {
@@ -70,7 +77,6 @@ private:
     Voxel * const center;
     Map &map;
     int radius;
-    int delay_years;
     int gen_years;
     int shift_already;
     std::vector<Guyot> guyots;
@@ -115,10 +121,27 @@ public:
 
 private:
 
+    using Vertex = std::pair<Voxel*, Voxel*>;
+    void print_vertex(const Vertex &v);
     void init(int x, int y);
-    int delay_years;
+    void find_edges();
+    void gen_graph();
+    void create_path();
+
+    Vertex bfs(Vertex start);
+    void try_update_path(Vertex start, Vertex end);
+
+    bool is_vertical_edge(const Vertex &v) const;
+    bool is_horisontal_edge(const Vertex &v) const;
+
     Map &map;
-    std::vector<Voxel*> path;
+    // we gonna look for the longest path between these vertices
+    std::vector<Vertex> map_edges;
+    std::vector<Vertex> plates_edges;
+    // TODO: create hash for Vertex and use unordered_set
+    std::map<Vertex, std::vector<Vertex>> graph;
+    std::map<Vertex, int> distance;
+    std::vector<Vertex> mor_path;
 };
 
 class ContinentalMargin final: public LandscapeElement {
