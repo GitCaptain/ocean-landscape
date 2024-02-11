@@ -1,1 +1,14 @@
 Ocean landscape generator for my master thesis
+
+How to build:
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release  ../src/
+make
+```
+
+How to run:
+```
+./LandscapeGenerator --sizex=500 --sizey=500 --years=300000 --output=out.vox
+```
