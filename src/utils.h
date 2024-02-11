@@ -17,9 +17,16 @@ struct Point {
         this->x = x;
         this->y = y;
     }
+
+    Point move(int dx, int dy) {
+        return {x + dx, y + dy};
+    }
+
 };
 
 bool point_in_range(Point p, Point l_guard, Point r_guard);
+
+Voxel voxel_from_point(const Map& map, Point p);
 
 Voxel* p_voxel_from_point(Map& map, Point p);
 

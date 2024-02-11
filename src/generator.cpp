@@ -126,8 +126,8 @@ void generation::Generator::generate_elements() {
         assert(radius + 1 < map[0].size() - radius - 1);
         int y = get_random_number_in_range(radius + 1,
                                            map[0].size() - radius - 1);
-        LOG_DEBUG(std::cout << "Add DeepSeaBasin { "
-                            << x << ", " << y << ", " << radius << " }\n";);
+        LOG_INFO(std::cout << "Add DeepSeaBasin { "
+                           << x << ", " << y << ", " << radius << " }\n";);
         elements.emplace_back(
             std::make_unique<DeepSeaBasin>(&map[x][y], map, radius));
     }
@@ -147,12 +147,9 @@ void generation::Generator::generate_elements() {
     int ridge_cnt = get_random_number_in_range(1, 1);
 #endif
     for (int i = 0; i < ridge_cnt; i++) {
-        int x = get_random_number_in_range(0, map.size() - 1);
-        int y = get_random_number_in_range(0, map[0].size() - 1);
-        LOG_DEBUG(std::cout << "Add MidOceanRidge { "
-                            << x << ", " << y << " }\n";);
+        LOG_INFO(std::cout << "Add MidOceanRidge\n";);
         elements.emplace_back(
-            std::make_unique<MidOceanRidge>(map, x, y));
+            std::make_unique<MidOceanRidge>(map));
     }
 }
 
@@ -170,16 +167,21 @@ void Generator::simulate() {
     }
 }
 
-void generation::LandscapeElement::do_iteration(int years_delta) {
+void LandscapeElement::do_iteration(int years_delta) {
     START();
     // Add some random delay to generation
     // to get different results.
+    gen_years += years_delta;
     if (delay_years > years_delta) {
         delay_years -= years_delta;
         return;
     }
 
     generation_step(years_delta);
+}
+
+bool LandscapeElement::point_in_map(Point p) {
+    return point_in_range(p, l_map_guard, r_map_guard);
 }
 
 #define COMMON_CALC(map, center, radius) \
@@ -221,7 +223,6 @@ void DeepSeaBasin::init() {
 void DeepSeaBasin::generation_step(int years_delta) {
     START();
 
-    gen_years += years_delta;
     int current_shift = 0;
     if (gen_years / year_per_vox_shift > shift_already) {
         current_shift = gen_years / year_per_vox_shift - shift_already;
@@ -331,7 +332,7 @@ int DeepSeaBasin::Guyot::max_radius = 30;
 
 #undef COMMON_CALC
 
-void MidOceanRidge::init(int x, int y) {
+void MidOceanRidge::init() {
     START();
 #ifdef DEBUG
     delay_years = 0;
@@ -345,6 +346,10 @@ void MidOceanRidge::init(int x, int y) {
         return;
     }
 #endif
+
+    int plates_speed = get_random_number_in_range(2, 15); // cm per year
+
+    depth_per_thousand_years = (plates_speed * 1000) / voxel_per_meter;
 
     find_edges();
     gen_graph();
@@ -364,11 +369,6 @@ void MidOceanRidge::find_edges() {
     START()
     std::array<int, 4> dxs = {-1, 0, 1, 0};
     std::array<int, 4> dys = {0, -1, 0, 1};
-
-    int minx = 0, maxx = map.size() - 1;
-    int miny = 0, maxy = map[0].size() - 1;
-    Point l_guard {minx, miny};
-    Point r_guard {maxx, maxy};
 
     auto add_voxels_to_edge = [this,
                               &plates_edge=plates_edges,
@@ -400,7 +400,7 @@ void MidOceanRidge::find_edges() {
                 int dx = dxs[i];
                 int dy = dys[i];
                 Point neighbour {x + dx, y + dy};
-                if (!point_in_range(neighbour, l_guard, r_guard)) {
+                if (!point_in_map(neighbour)) {
                     continue;
                 }
                 Voxel *neighbour_v = p_voxel_from_point(map, neighbour);
@@ -560,8 +560,45 @@ void MidOceanRidge::try_update_path(Vertex start, Vertex end) {
 void MidOceanRidge::generation_step(int years_delta) {
     START()
 
+    int expected_depth = gen_years / 1000;
+
+    if (expected_depth <= shift_already) {
+        return;
+    }
+
+    int diff = expected_depth - shift_already;
+
     for(auto &v: mor_path) {
+        int dx = 0, dy = 0;
+
+        if (is_horisontal_edge(v)) {
+            dy = 1;
+        } else {
+            dx = 1;
+        }
+
+        auto [vox_1, vox_2] = v;
+
+        Point first {vox_1->x, vox_1->y};
+        Point second {vox_2->x, vox_2->y};
+
+        for(int i = 0; i < expected_depth; i++) {
+            Point dfirst = first.move(-i*dx, -i*dy);
+            Point dsecond = second.move(i*dx, i*dy);
+
+            if (point_in_map(dfirst)) {
+                Voxel *v = p_voxel_from_point(map, dfirst);
+                v->z -= diff;
+            }
+
+            if (point_in_map(dsecond)) {
+                Voxel *v = p_voxel_from_point(map, dfirst);
+                v->z -= diff;
+            }
+
+        }
 
     }
 
+    shift_already = expected_depth;
 }

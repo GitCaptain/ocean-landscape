@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include "common.h"
+#include "utils.h"
 
 namespace generation {
 
@@ -14,16 +15,29 @@ namespace generation {
 Resolution: 1 voxel = 20 meters
 */
 
+const int voxel_per_meter = 20;
+using utils::Point;
+
 class LandscapeElement {
 
 public:
+    LandscapeElement(Map &map):
+        map(map), l_map_guard(0, 0), r_map_guard(map.size()-1, map[0].size()-1)
+        {}
     void do_iteration(int years_delta);
     virtual ~LandscapeElement() = default;
 
 protected:
     virtual void generation_step(int years_delta) = 0;
 
+    bool point_in_map(Point p);
+
+    Map &map;
+    Point l_map_guard;
+    Point r_map_guard;
+    int gen_years = 0;
     int delay_years = 0;
+    int shift_already = 0;
 };
 
 class Generator final {
@@ -54,12 +68,10 @@ private:
 class DeepSeaBasin final: public LandscapeElement {
 
 public:
-    DeepSeaBasin(Voxel *center, Map &map, int radius):
-        center(center), map(map), radius(radius) {
-            gen_years = 0;
-            shift_already = 0;
+    DeepSeaBasin(Voxel *center, Map &map, int radius): LandscapeElement(map),
+        center(center), radius(radius) {
             init();
-        }
+    }
 
     void generation_step(int years_delta) override;
 
@@ -75,10 +87,7 @@ private:
     void init();
 
     Voxel * const center;
-    Map &map;
     int radius;
-    int gen_years;
-    int shift_already;
     std::vector<Guyot> guyots;
 
     class Guyot final {
@@ -113,8 +122,8 @@ private:
 
 class MidOceanRidge final: public LandscapeElement {
 public:
-    MidOceanRidge(Map &map, int x, int y): map(map) {
-        init(x, y);
+    MidOceanRidge(Map &map): LandscapeElement(map) {
+        init();
     }
 
     void generation_step(int years_delta) override;
@@ -123,7 +132,7 @@ private:
 
     using Vertex = std::pair<Voxel*, Voxel*>;
     void print_vertex(const Vertex &v);
-    void init(int x, int y);
+    void init();
     void find_edges();
     void gen_graph();
     void create_path();
@@ -134,7 +143,6 @@ private:
     bool is_vertical_edge(const Vertex &v) const;
     bool is_horisontal_edge(const Vertex &v) const;
 
-    Map &map;
     // we gonna look for the longest path between these vertices
     std::vector<Vertex> map_edges;
     std::vector<Vertex> plates_edges;
@@ -142,12 +150,13 @@ private:
     std::map<Vertex, std::vector<Vertex>> graph;
     std::map<Vertex, int> distance;
     std::vector<Vertex> mor_path;
+    int depth_per_thousand_years = 0;
 };
 
 class ContinentalMargin final: public LandscapeElement {
 
 public:
-    ContinentalMargin() {}
+    ContinentalMargin(Map &map): LandscapeElement(map) {}
 
     void generation_step(int years_delta) override;
 
