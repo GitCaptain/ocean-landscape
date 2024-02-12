@@ -143,7 +143,7 @@ void generation::Generator::generate_elements() {
     for (int i = 0; i < margin_cnt; i++) {
         int x = get_random_number_in_range(0, sizex - 1);
         int y = get_random_number_in_range(0, sizey - 1);
-        LOG_INFO(std::cout << "Add Continental Margin {" 
+        LOG_INFO(std::cout << "Add Continental Margin {"
                            << x << ", " << y << "}\n";);
         elements.emplace_back(std::make_unique<ContinentalMargin>(map, x, y));
     }
@@ -315,7 +315,7 @@ void DeepSeaBasin::Guyot::init() {
             Voxel &vox = map[x][y];
             if (dx *1ll*dx + dy*1ll*dy <= rsq) {
                 vox.color = 255 - vox.color; // change color to see difference
-                vox.z = zero_level + height - 
+                vox.z = zero_level + height -
                     std::max(dx, dy) * height_multiplier;
             }
         }
@@ -631,7 +631,7 @@ void MidOceanRidge::generation_step(int years_delta) {
             Point dsecond = second.move(dx_move, dy_move);
 
             do_z_shift(dfirst, diff/4);
-            do_z_shift(dsecond, diff/4);         
+            do_z_shift(dsecond, diff/4);
 
         }
     }
@@ -649,8 +649,8 @@ void ContinentalMargin::init(int x, int y) {
     START();
 
     // Use the closest edge to the given point
-    int min_dx = std::min(x, map.size() - x);
-    int min_dy = std::min(y, map[0].size() - y);
+    int min_dx = std::min(x, (int)map.size() - x);
+    int min_dy = std::min(y, (int)map[0].size() - y);
 
     bool use_x = false;
     if (min_dx < min_dy) {
@@ -678,16 +678,16 @@ void ContinentalMargin::init(int x, int y) {
     // And also collect edge voxels
     int plate_ref = map[x][y].plate_ref;
 
-    for (i = 0; i < map.size(); i++) {
-        for (j = 0; j < map[0].size(); j++) {
-            
+    for (int i = 0; i < map.size(); i++) {
+        for (int j = 0; j < map[0].size(); j++) {
+
             Voxel &v = map[i][j];
             if (v.plate_ref != plate_ref) {
                 continue;
             }
-            
+
             v.z = plate_height;
-            
+
             if (use_x && i == x || !use_x && j == y) {
                 edge.emplace_back(&v);
             }
@@ -700,7 +700,7 @@ void ContinentalMargin::init(int x, int y) {
 
 }
 
-void ContinentalMargin::generation_step() {
+void ContinentalMargin::generation_step(int years_delta) {
     START()
 
     int expected_depth = (gen_years / 1000) * depth_per_thousand_years;
@@ -711,9 +711,9 @@ void ContinentalMargin::generation_step() {
 
     int diff = expected_depth - shift_already;
 
-    for (auto Voxel *v: edge) {
+    for (Voxel *v: edge) {
         for (int i = 0; i < expected_depth; i++) {
-            Point p = {v->x + edge_dx * i, v->y + edge_dy * i}; 
+            Point p = {v->x + edge_dx * i, v->y + edge_dy * i};
             do_z_shift(p, diff - i);
         }
     }
