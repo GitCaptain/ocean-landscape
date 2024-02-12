@@ -58,7 +58,7 @@ void Generator::split_map() {
                             << p.x << ", " << p.y << "}\n";);
     }
 
-#ifdef DEBUG
+#if 0
     points = {
         {3, 1}, {2, 3}, {1, 0}, {0, 1}, {1, 4}
     };
@@ -116,7 +116,6 @@ void generation::Generator::generate_elements() {
     int basins_cnt = get_random_number_in_range(0, 3);
 #endif
 
-# if 0
     for (int i = 0; i < basins_cnt; i++) {
         int radius = get_random_number_in_range(
                             DeepSeaBasin::min_radius,
@@ -131,7 +130,6 @@ void generation::Generator::generate_elements() {
         elements.emplace_back(
             std::make_unique<DeepSeaBasin>(&map[x][y], map, radius));
     }
-#endif
 
     // Generate ContinentalMargin
 #ifdef DEBUG
@@ -152,7 +150,7 @@ void generation::Generator::generate_elements() {
 #ifdef DEBUG
     int ridge_cnt = 1;
 #else
-    int ridge_cnt = get_random_number_in_range(1, 1);
+    int ridge_cnt = get_random_number_in_range(0, 1);
 #endif
     for (int i = 0; i < ridge_cnt; i++) {
         LOG_INFO(std::cout << "Add MidOceanRidge\n";);
@@ -380,7 +378,8 @@ void MidOceanRidge::init() {
 
     int plates_speed = get_random_number_in_range(2, 15); // cm per year
 
-    depth_per_thousand_years = (plates_speed * 1000) / voxel_per_meter;
+    depth_per_thousand_years = 1;
+    //(plates_speed * 1000) / 100 / voxel_per_meter;
 
     find_edges();
     gen_graph();
@@ -630,8 +629,8 @@ void MidOceanRidge::generation_step(int years_delta) {
             Point dfirst = first.move(-dx_move, -dy_move);
             Point dsecond = second.move(dx_move, dy_move);
 
-            do_z_shift(dfirst, diff/4);
-            do_z_shift(dsecond, diff/4);
+            do_z_shift(dfirst, diff);
+            do_z_shift(dsecond, diff);
 
         }
     }
@@ -652,9 +651,7 @@ void ContinentalMargin::init(int x, int y) {
     int min_dx = std::min(x, (int)map.size() - x);
     int min_dy = std::min(y, (int)map[0].size() - y);
 
-    bool use_x = false;
     if (min_dx < min_dy) {
-        use_x = true;
         if (x > map.size() - x) {
             x = map.size() - 1;
             edge_dx = -1;
@@ -674,6 +671,8 @@ void ContinentalMargin::init(int x, int y) {
         }
     }
 
+    int plate_height = get_random_number_in_range(150, 250);
+
     // Lets lift this plate up
     // And also collect edge voxels
     int plate_ref = map[x][y].plate_ref;
@@ -688,7 +687,7 @@ void ContinentalMargin::init(int x, int y) {
 
             v.z = plate_height;
 
-            if (use_x && i == x || !use_x && j == y) {
+            if (edge_dx && i == x || edge_dy && j == y) {
                 edge.emplace_back(&v);
             }
 
@@ -696,14 +695,15 @@ void ContinentalMargin::init(int x, int y) {
     }
 
     int plates_speed = get_random_number_in_range(2, 15); // cm per year
-    depth_per_thousand_years = (plates_speed * 1000) / voxel_per_meter;
+    depth_per_thousand_years = 1;
+    //(plates_speed * 1000) / 100 / voxel_per_meter;
 
 }
 
 void ContinentalMargin::generation_step(int years_delta) {
     START()
 
-    int expected_depth = (gen_years / 1000) * depth_per_thousand_years;
+    int expected_depth = (gen_years / 1000) * depth_per_thousand_years / 2;
 
     if (expected_depth <= shift_already) {
         return;
@@ -714,7 +714,7 @@ void ContinentalMargin::generation_step(int years_delta) {
     for (Voxel *v: edge) {
         for (int i = 0; i < expected_depth; i++) {
             Point p = {v->x + edge_dx * i, v->y + edge_dy * i};
-            do_z_shift(p, diff - i);
+            do_z_shift(p, -diff);
         }
     }
 

@@ -167,13 +167,12 @@ public:
     void generation_step(int years_delta) override;
 
 private:
-    
+
     void init(int x, int y);
 
-    std::vector<Voxel*> edge; 
+    std::vector<Voxel*> edge;
     int edge_dx = 0;
     int edge_dy = 0;
-    int plate_height = 500;
     int depth_per_thousand_years = 0;
 };
 
