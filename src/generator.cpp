@@ -291,7 +291,8 @@ void DeepSeaBasin::Guyot::init() {
             Voxel &vox = map[x][y];
             if (dx *1ll*dx + dy*1ll*dy <= rsq) {
                 vox.color = 255 - vox.color; // change color to see difference
-                vox.z = zero_level + height - std::max(dx, dy) * height_multiplier;
+                vox.z = zero_level + height - 
+                    std::max(dx, dy) * height_multiplier;
             }
         }
     }
