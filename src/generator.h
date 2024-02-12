@@ -16,6 +16,8 @@ Resolution: 1 voxel = 20 meters
 */
 
 const int voxel_per_meter = 20;
+const int MAX_Z_SIZE = 10000;
+const int MIN_Z_SIZE = 0;
 using utils::Point;
 
 class LandscapeElement {
@@ -31,6 +33,8 @@ protected:
     virtual void generation_step(int years_delta) = 0;
 
     bool point_in_map(Point p);
+    void do_z_shift(const Point &p, int shift);
+
 
     Map &map;
     Point l_map_guard;
@@ -62,7 +66,7 @@ private:
     int sizex;
     int sizey;
     int years;
-
+    int initial_height = 100;
 };
 
 class DeepSeaBasin final: public LandscapeElement {
@@ -156,10 +160,21 @@ private:
 class ContinentalMargin final: public LandscapeElement {
 
 public:
-    ContinentalMargin(Map &map): LandscapeElement(map) {}
+    ContinentalMargin(Map &map, int x, int y): LandscapeElement(map) {
+        init(x, y);
+    }
 
     void generation_step(int years_delta) override;
 
+private:
+    
+    void init(int x, int y);
+
+    std::vector<Voxel*> edge; 
+    int edge_dx = 0;
+    int edge_dy = 0;
+    int plate_height = 500;
+    int depth_per_thousand_years = 0;
 };
 
 }

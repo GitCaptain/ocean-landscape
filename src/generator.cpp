@@ -96,7 +96,7 @@ void Generator::set_height() {
     for(int i = 0; i < sizex; i++) {
         for(int j = 0; j < sizey; j++) {
             Voxel &v = map[i][j];
-            v.z = 100;
+            v.z = initial_height;
             // Palette has only 256 colors
             v.color = (v.plate_ref + 1) % 256;
             LOG_DEBUG(std::cout << "Voxel Info:\nPos = {"
@@ -139,6 +139,14 @@ void generation::Generator::generate_elements() {
 #else
     int margin_cnt = get_random_number_in_range(0, 2);
 #endif
+
+    for (int i = 0; i < margin_cnt; i++) {
+        int x = get_random_number_in_range(0, sizex - 1);
+        int y = get_random_number_in_range(0, sizey - 1);
+        LOG_INFO(std::cout << "Add Continental Margin {" 
+                           << x << ", " << y << "}\n";);
+        elements.emplace_back(std::make_unique<ContinentalMargin>(map, x, y));
+    }
 
     // Generate MidOceanRidge
 #ifdef DEBUG
@@ -183,6 +191,22 @@ void LandscapeElement::do_iteration(int years_delta) {
 bool LandscapeElement::point_in_map(Point p) {
     return point_in_range(p, l_map_guard, r_map_guard);
 }
+
+void LandscapeElement::do_z_shift(const Point &p, int shift) {
+    if (point_in_map(p)) {
+        Voxel *v = p_voxel_from_point(map, p);
+        if (v->z + shift <= MIN_Z_SIZE || v->z + shift >= MAX_Z_SIZE) {
+            return;
+        }
+        v->z += shift;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////// DeepSeaBasin                ////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
 #define COMMON_CALC(map, center, radius) \
     const int x0 = center->x; \
@@ -332,6 +356,12 @@ int DeepSeaBasin::Guyot::min_radius = 20;
 int DeepSeaBasin::Guyot::max_radius = 30;
 
 #undef COMMON_CALC
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////// MidOceanRidge               ////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
 void MidOceanRidge::init() {
     START();
@@ -561,20 +591,13 @@ void MidOceanRidge::try_update_path(Vertex start, Vertex end) {
 void MidOceanRidge::generation_step(int years_delta) {
     START()
 
-    int expected_depth = gen_years / 1000;
+    int expected_depth = (gen_years / 1000) * depth_per_thousand_years;
 
     if (expected_depth <= shift_already) {
         return;
     }
 
     int diff = expected_depth - shift_already;
-
-    auto do_shift = [](const Point &p, int shift) {
-        if (point_in_map(p)) {
-            Voxel *v = p_voxel_from_point(map, p);
-            v->z += shift;
-        }
-    };
 
     for(auto &v: mor_path) {
         int dx = 0, dy = 0;
@@ -595,8 +618,8 @@ void MidOceanRidge::generation_step(int years_delta) {
             Point dfirst = first.move(-i*dx, -i*dy);
             Point dsecond = second.move(i*dx, i*dy);
 
-            do_shift(dfirst, -diff);
-            do_shift(dsecond, -diff);
+            do_z_shift(dfirst, -diff);
+            do_z_shift(dsecond, -diff);
 
         }
 
@@ -607,11 +630,94 @@ void MidOceanRidge::generation_step(int years_delta) {
             Point dfirst = first.move(-dx_move, -dy_move);
             Point dsecond = second.move(dx_move, dy_move);
 
-            do_shift(dfirst, diff/4);
-            do_shift(dsecond, diff/4);         
+            do_z_shift(dfirst, diff/4);
+            do_z_shift(dsecond, diff/4);         
 
         }
     }
 
     shift_already = expected_depth;
+}
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////// ContinentalMargin           ////////////////////////
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+void ContinentalMargin::init(int x, int y) {
+    START();
+
+    // Use the closest edge to the given point
+    int min_dx = std::min(x, map.size() - x);
+    int min_dy = std::min(y, map[0].size() - y);
+
+    bool use_x = false;
+    if (min_dx < min_dy) {
+        use_x = true;
+        if (x > map.size() - x) {
+            x = map.size() - 1;
+            edge_dx = -1;
+        }
+        else {
+            x = 0;
+            edge_dx = 1;
+        }
+    } else {
+        if (y > map[0].size() - y) {
+            y = map[0].size() - 1;
+            edge_dy = -1;
+        }
+        else {
+            y = 0;
+            edge_dy = 1;
+        }
+    }
+
+    // Lets lift this plate up
+    // And also collect edge voxels
+    int plate_ref = map[x][y].plate_ref;
+
+    for (i = 0; i < map.size(); i++) {
+        for (j = 0; j < map[0].size(); j++) {
+            
+            Voxel &v = map[i][j];
+            if (v.plate_ref != plate_ref) {
+                continue;
+            }
+            
+            v.z = plate_height;
+            
+            if (use_x && i == x || !use_x && j == y) {
+                edge.emplace_back(&v);
+            }
+
+        }
+    }
+
+    int plates_speed = get_random_number_in_range(2, 15); // cm per year
+    depth_per_thousand_years = (plates_speed * 1000) / voxel_per_meter;
+
+}
+
+void ContinentalMargin::generation_step() {
+    START()
+
+    int expected_depth = (gen_years / 1000) * depth_per_thousand_years;
+
+    if (expected_depth <= shift_already) {
+        return;
+    }
+
+    int diff = expected_depth - shift_already;
+
+    for (auto Voxel *v: edge) {
+        for (int i = 0; i < expected_depth; i++) {
+            Point p = {v->x + edge_dx * i, v->y + edge_dy * i}; 
+            do_z_shift(p, diff - i);
+        }
+    }
+
+    shift_already = expected_depth;
+
 }
