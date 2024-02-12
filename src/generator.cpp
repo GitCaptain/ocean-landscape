@@ -568,6 +568,13 @@ void MidOceanRidge::generation_step(int years_delta) {
 
     int diff = expected_depth - shift_already;
 
+    auto do_shift = [](const Point &p, int shift) {
+        if (point_in_map(p)) {
+            Voxel *v = p_voxel_from_point(map, p);
+            v->z += shift;
+        }
+    };
+
     for(auto &v: mor_path) {
         int dx = 0, dy = 0;
 
@@ -582,22 +589,27 @@ void MidOceanRidge::generation_step(int years_delta) {
         Point first {vox_1->x, vox_1->y};
         Point second {vox_2->x, vox_2->y};
 
+        // create deepening
         for(int i = 0; i < expected_depth; i++) {
             Point dfirst = first.move(-i*dx, -i*dy);
             Point dsecond = second.move(i*dx, i*dy);
 
-            if (point_in_map(dfirst)) {
-                Voxel *v = p_voxel_from_point(map, dfirst);
-                v->z -= diff;
-            }
-
-            if (point_in_map(dsecond)) {
-                Voxel *v = p_voxel_from_point(map, dfirst);
-                v->z -= diff;
-            }
+            do_shift(dfirst, -diff);
+            do_shift(dsecond, -diff);
 
         }
 
+        // create elevation (~4 times slower, than deepening)
+        for (int i = 0; i < expected_depth / 4; i++) {
+            int dx_move = ((dx ? expected_depth:0) + i * dx);
+            int dy_move = ((dy ? expected_depth:0) + i * dy);
+            Point dfirst = first.move(-dx_move, -dy_move);
+            Point dsecond = second.move(dx_move, dy_move);
+
+            do_shift(dfirst, diff/4);
+            do_shift(dsecond, diff/4);         
+
+        }
     }
 
     shift_already = expected_depth;
