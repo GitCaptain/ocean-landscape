@@ -35,6 +35,7 @@
 // #define VERBOSE
 
 namespace vox {
+DICTstring::DICTstring() { bufferSize = 0; }
 
 void DICTstring::write(FILE* fp) {
     bufferSize = (int32_t)buffer.size();
@@ -64,6 +65,8 @@ void DICTitem::write(FILE* fp) {
 size_t DICTitem::getSize() { return key.getSize() + value.getSize(); }
 
 //////////////////////////////////////////////////////////////////
+
+DICT::DICT() { count = 0; }
 
 void DICT::write(FILE* fp) {
     count = (int32_t)keys.size();
