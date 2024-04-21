@@ -264,7 +264,6 @@ typedef std::function<void(const KeyFrame& vKeyFrame, const double& vValue)> Key
 inline uint32_t GetMVID(uint8_t a, uint8_t b, uint8_t c, uint8_t d) { return (a) | (b << 8) | (c << 16) | (d << 24); }
 
 struct DICTstring {
-    int32_t     bufferSize;
     std::string buffer;
 
     DICTstring();
@@ -285,7 +284,6 @@ struct DICTitem {
 };
 
 struct DICT {
-    int32_t               count;
     std::vector<DICTitem> keys;
 
     DICT();

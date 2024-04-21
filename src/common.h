@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <vector>
+#include <cstdint>
 
 struct Plate final {
     int speedX;

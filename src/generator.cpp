@@ -5,6 +5,7 @@
 #include "generator.h"
 #include "logger.h"
 #include "utils.h"
+#include "noise.h"
 
 using namespace generation;
 using namespace utils;
@@ -15,8 +16,8 @@ void Generator::generate() {
     split_map();
     set_properties();
     set_height();
-    generate_elements();
-    simulate();
+    // generate_elements();
+    // simulate();
 }
 
 Map Generator::get_result() const {
@@ -93,10 +94,11 @@ void Generator::set_properties() {
 
 void Generator::set_height() {
     LOG_INFO(std::cout << "Set heights...\n";);
+    Noise::make_noise(map, 90, 110);
     for(int i = 0; i < sizex; i++) {
         for(int j = 0; j < sizey; j++) {
             Voxel &v = map[i][j];
-            v.z = initial_height;
+            // v.z = initial_height;
             // Palette has only 256 colors
             v.color = (v.plate_ref + 1) % 256;
             LOG_DEBUG(std::cout << "Voxel Info:\nPos = {"

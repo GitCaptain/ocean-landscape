@@ -14,6 +14,9 @@ set(SOURCE_FILES
     common.h
     utils.cpp
     utils.h
+    measure.h
+    noise.h
+    noise.cpp
     )
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
