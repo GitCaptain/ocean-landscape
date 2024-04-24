@@ -15,6 +15,7 @@ set(SOURCE_FILES
     utils.cpp
     utils.h
     measure.h
+    noise/FastNoiseLite.h
     noise.h
     noise.cpp
     )
