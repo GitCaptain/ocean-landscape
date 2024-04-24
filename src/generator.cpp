@@ -94,7 +94,7 @@ void Generator::set_properties() {
 
 void Generator::set_height() {
     LOG_INFO(std::cout << "Set heights...\n";);
-    Noise::make_noise(map, 90, 110);
+    Noise::make_noise(map, initial_min_height, initial_max_height);
     for(int i = 0; i < sizex; i++) {
         for(int j = 0; j < sizey; j++) {
             Voxel &v = map[i][j];

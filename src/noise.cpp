@@ -94,6 +94,14 @@ int root_int(int x) {
 
 */
 
+namespace {
+    float warp(float x) {
+        if ( x < -1.0) return -1.0;
+        if ( x > 1.0) return 1.0;
+        return x;
+    }
+}
+
 namespace Noise {
 
 
@@ -129,7 +137,7 @@ void make_noise(Map& map, int noise_min, int noise_max) {
     int h = map[0].size();
     for(int i = 0; i < w; i++) {
         for (int j = 0; j < h; j++) {
-            float noise_res = noise.GetNoise((float)i, (float)j); // -1..1
+            float noise_res = warp(noise.GetNoise((float)i, (float)j)); // -1..1
             noise_res += 1; noise_res /= 2; // 0..1
             map[i][j].z = std::lerp(noise_min, noise_max, noise_res);
             LOG_INFO(std::cout << noise_res << " (" << map[i][j].z << ") ";);

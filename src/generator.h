@@ -11,6 +11,11 @@
 
 namespace generation {
 
+
+// Noise generation range
+const int initial_min_height = 90;
+const int initial_max_height = 110;
+
 /*
 Resolution: 1 voxel = 20 meters
 */
