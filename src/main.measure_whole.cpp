@@ -101,27 +101,30 @@ int main(int argc, char **argv) {
                         << ", margin = " << params.margin_cnt
                         << ", file = " << params.file << '\n');
 
-    generation::Generator g{params};
-    g.generate();
-    Map landscape = g.get_result();
+    auto genf = [&params]() {
+        generation::Generator g{params};
+        g.generate();
+        // Map landscape = g.get_result();
+    };
+    measure::do_bench(params.file.data(), genf);
 
-#if 0
-    VoxWriter vw;
-    vw.write(landscape, file);
+// #if 0
+//     VoxWriter vw;
+//     vw.write(landscape, file);
 
-#else
-    LOG_INFO(std::cout << "Start writing to file\n";);
-    vox::VoxWriter vox;
-    for (int32_t x = 0; x < landscape.size(); ++x) {
-        for (int32_t y = 0; y < landscape[0].size(); ++y) {
-            for (int32_t z = 0; z < landscape[x][y].z; z++) {
-                vox.AddVoxel(x, y, z, landscape[x][y].color);
-            }
-        }
-    }
-    LOG_DEBUG(std::cout << "Start saving file\n";);
-    vox.SaveToFile(params.file.data());
-#endif
+// #else
+//     LOG_INFO(std::cout << "Start writing to file\n";);
+//     vox::VoxWriter vox;
+//     for (int32_t x = 0; x < landscape.size(); ++x) {
+//         for (int32_t y = 0; y < landscape[0].size(); ++y) {
+//             for (int32_t z = 0; z < landscape[x][y].z; z++) {
+//                 vox.AddVoxel(x, y, z, landscape[x][y].color);
+//             }
+//         }
+//     }
+//     LOG_DEBUG(std::cout << "Start saving file\n";);
+//     vox.SaveToFile(params.file.data());
+// #endif
 
     return 0;
 }
