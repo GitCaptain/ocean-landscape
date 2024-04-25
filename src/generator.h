@@ -52,7 +52,10 @@ protected:
 class Generator final {
 public:
 
-    Generator(int x, int y, int years): sizex(x), sizey(y), years(years) {}
+    Generator(const GenParams &params):
+        sizex(params.sizex), sizey(params.sizey), years(params.years),
+        ridge_cnt(params.mor_cnt), basin_cnt(params.basin_cnt),
+        margin_cnt(params.margin_cnt) {}
     void generate();
     Map get_result() const;
 
@@ -71,6 +74,9 @@ private:
     int sizex;
     int sizey;
     int years;
+    int ridge_cnt;
+    int basin_cnt;
+    int margin_cnt;
     int initial_height = 100;
 };
 

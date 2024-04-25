@@ -6,25 +6,24 @@
 #include "generator.h"
 #include "vox_writer.h"
 #include "logger.h"
+#include "measure.h"
 
 namespace {
-
-    struct Args final {
-        int sizex;
-        int sizey;
-        int years;
-        std::string_view file;
-    };
 
     const std::string_view SIZEX = "--sizex=";
     const std::string_view SIZEY = "--sizey=";
     const std::string_view YEARS = "--years=";
     const std::string_view OUTPUT = "--output=";
     const std::string_view DEFAULT_OUTPUT = "landscape.vox";
+
+    const std::string_view MID_OCEAN_RIDGE_CNT = "--mor-cnt=";
+    const std::string_view DEEP_SEA_BASIN_CNT = "--basin-cnt=";
+    const std::string_view CONTINENTAL_MARGIN_CNT = "--margin-cnt=";
+
 }
 
-std::optional<Args> parse_input(std::vector<std::string_view> input) {
-    Args res {0, 0, 0, DEFAULT_OUTPUT};
+std::optional<GenParams> parse_input(std::vector<std::string_view> input) {
+    GenParams res {0, 0, 0, -1, -1, -1, DEFAULT_OUTPUT};
     bool x = false, y = false, years = false;
 
     auto str2int = [](std::string_view full, std::string_view extra, int &out) {
@@ -47,6 +46,18 @@ std::optional<Args> parse_input(std::vector<std::string_view> input) {
             if(!str2int(param, YEARS, res.years)) return {};
             years = true;
         }
+        if(param.starts_with(MID_OCEAN_RIDGE_CNT)) {
+            if(!str2int(param, MID_OCEAN_RIDGE_CNT, res.mor_cnt)) return {};
+            years = true;
+        }
+        if(param.starts_with(DEEP_SEA_BASIN_CNT)) {
+            if(!str2int(param, DEEP_SEA_BASIN_CNT, res.basin_cnt)) return {};
+            years = true;
+        }
+        if(param.starts_with(CONTINENTAL_MARGIN_CNT)) {
+            if(!str2int(param, CONTINENTAL_MARGIN_CNT, res.margin_cnt)) return {};
+            years = true;
+        }
         if(param.starts_with(OUTPUT)) {
             res.file = param.substr(OUTPUT.size());
         }
@@ -66,7 +77,11 @@ int main(int argc, char **argv) {
                   << SIZEX << "X "
                   << SIZEY << "Y "
                   << YEARS << "N "
-                  << OUTPUT << "file\n";
+                  << "[ " << OUTPUT << "file ] "
+                  << "[ " << MID_OCEAN_RIDGE_CNT << "cnt ] "
+                  << "[ " << DEEP_SEA_BASIN_CNT << "cnt ] "
+                  << "[ " << CONTINENTAL_MARGIN_CNT << "cnt ]\n";
+
         return 0;
     }
 
@@ -77,15 +92,19 @@ int main(int argc, char **argv) {
         std::cerr << "Wrong input parameters\n";
         return 1;
     }
-    const auto [x, y, years, file] = *parsed_input;
-    LOG_DEBUG(std::cout << "INPUT: x = " << x
-                        << ", y = " << y
-                        << ", ye = " << years
-                        << ", file = " << file << '\n');
+    const auto params = *parsed_input;
+    LOG_DEBUG(std::cout << "INPUT: x = " << params.x
+                        << ", y = " << params.y
+                        << ", ye = " << params.years
+                        << ", mor = " << params.mor_cnt
+                        << ", basin = " << params.basin_cnt
+                        << ", margin = " << params.margin_cnt
+                        << ", file = " << params.file << '\n');
 
-    generation::Generator g{x, y, years};
-    g.generate();
-    Map landscape = g.get_result();
+    // auto genf = [&params]() {
+        generation::Generator g{params};
+        g.generate();
+        Map landscape = g.get_result();
 
 #if 0
     VoxWriter vw;
@@ -102,10 +121,8 @@ int main(int argc, char **argv) {
         }
     }
     LOG_DEBUG(std::cout << "Start saving file\n";);
-    vox.SaveToFile(file.data());
+    vox.SaveToFile(params.file.data());
 #endif
-
-
 
     return 0;
 }

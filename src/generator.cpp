@@ -6,6 +6,7 @@
 #include "logger.h"
 #include "utils.h"
 #include "noise.h"
+#include "measure.h"
 
 using namespace generation;
 using namespace utils;
@@ -112,14 +113,11 @@ void Generator::set_height() {
 void generation::Generator::generate_elements() {
     START();
     // Generate DeapSeaBasins
-// #define DEBUG
-#ifdef DEBUG
-    int basins_cnt = 2;
-#else
-    int basins_cnt = get_random_number_in_range(0, 3);
-#endif
 
-    for (int i = 0; i < basins_cnt; i++) {
+    if (basin_cnt < 0) {
+        basin_cnt = get_random_number_in_range(0, 3);
+    }
+    for (int i = 0; i < basin_cnt; i++) {
         int radius = get_random_number_in_range(
                             DeepSeaBasin::min_radius,
                             DeepSeaBasin::max_radius);
@@ -135,12 +133,9 @@ void generation::Generator::generate_elements() {
     }
 
     // Generate ContinentalMargin
-#ifdef DEBUG
-    int margin_cnt = 1;
-#else
-    int margin_cnt = get_random_number_in_range(0, 2);
-#endif
-
+    if (margin_cnt < 0) {
+        margin_cnt = get_random_number_in_range(0, 2);
+    }
     for (int i = 0; i < margin_cnt; i++) {
         int x = get_random_number_in_range(0, sizex - 1);
         int y = get_random_number_in_range(0, sizey - 1);
@@ -150,17 +145,15 @@ void generation::Generator::generate_elements() {
     }
 
     // Generate MidOceanRidge
-#ifdef DEBUG
-    int ridge_cnt = 1;
-#else
-    int ridge_cnt = get_random_number_in_range(0, 1);
-#endif
+    if (ridge_cnt < 0) {
+        ridge_cnt = get_random_number_in_range(0, 1);
+    }
     for (int i = 0; i < ridge_cnt; i++) {
         LOG_INFO(std::cout << "Add MidOceanRidge\n";);
         elements.emplace_back(
             std::make_unique<MidOceanRidge>(map));
     }
-#undef DEBUG
+
 }
 
 void Generator::simulate() {

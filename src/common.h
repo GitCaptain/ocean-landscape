@@ -18,6 +18,16 @@ struct Voxel final {
     uint8_t color;
 };
 
+struct GenParams final {
+	int sizex;
+	int sizey;
+	int years;
+	int mor_cnt;
+	int basin_cnt;
+	int margin_cnt;
+	std::string_view file;
+};
+
 using Map = std::vector<std::vector<Voxel>>;
 
 #if 0
