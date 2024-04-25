@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SOURCE_FILES
-    main.cpp
     generator.cpp
     generator.h
     vox_writer.cpp
@@ -19,9 +18,11 @@ set(SOURCE_FILES
     noise/FastNoiseLite.h
     noise.h
     noise.cpp
-    )
+)
 
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
+add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES} "main.cpp")
+add_executable("units_measure" ${SOURCE_FILES} "unit_measure.cpp")
+add_executable("whole_measure" ${SOURCE_FILES} "main.measure_whole.cpp")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -Wall)
