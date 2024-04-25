@@ -59,14 +59,14 @@ public:
     void generate();
     Map get_result() const;
 
-private:
-
     void setup_map();
     void split_map();
     void set_properties();
     void generate_elements();
     void set_height();
     void simulate();
+
+private:
 
     Map map;
     std::vector<Plate> plates;
