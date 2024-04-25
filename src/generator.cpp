@@ -16,8 +16,8 @@ void Generator::generate() {
     split_map();
     set_properties();
     set_height();
-    // generate_elements();
-    // simulate();
+    generate_elements();
+    simulate();
 }
 
 Map Generator::get_result() const {
@@ -112,8 +112,9 @@ void Generator::set_height() {
 void generation::Generator::generate_elements() {
     START();
     // Generate DeapSeaBasins
+// #define DEBUG
 #ifdef DEBUG
-    int basins_cnt = 1;
+    int basins_cnt = 2;
 #else
     int basins_cnt = get_random_number_in_range(0, 3);
 #endif
@@ -159,6 +160,7 @@ void generation::Generator::generate_elements() {
         elements.emplace_back(
             std::make_unique<MidOceanRidge>(map));
     }
+#undef DEBUG
 }
 
 void Generator::simulate() {
