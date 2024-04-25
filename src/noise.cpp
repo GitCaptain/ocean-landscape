@@ -140,9 +140,9 @@ void make_noise(Map& map, int noise_min, int noise_max) {
             float noise_res = warp(noise.GetNoise((float)i, (float)j)); // -1..1
             noise_res += 1; noise_res /= 2; // 0..1
             map[i][j].z = std::lerp(noise_min, noise_max, noise_res);
-            LOG_INFO(std::cout << noise_res << " (" << map[i][j].z << ") ";);
+            LOG_DEBUG(std::cout << noise_res << " (" << map[i][j].z << ") ";);
         }
-        LOG_INFO(std::cout << '\n';);
+        LOG_DEBUG(std::cout << '\n';);
     }
 }
 
