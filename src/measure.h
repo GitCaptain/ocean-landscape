@@ -28,16 +28,23 @@ public:
         const auto end = steady_clock::now();
         const duration<double> elapsed_seconds{end - start};
         tc.push_back(elapsed_seconds);
-        LOG_INFO(
+        LOG_DEBUG(
             std::cout << "Measured time: " << elapsed_seconds.count() << '\n';);
     }
 
 };
 
-void time_measure(
+time_container time_measure(
+    std::function<void()> f,
+    int repeats = 1000);
+
+void print_stats(const std::string_view result_file, time_container& tc);
+
+void do_bench(
     const std::string_view result_file,
     std::function<void()> f,
     int repeats = 1000);
+
 } // namespace measure
 
 #endif
