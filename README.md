@@ -34,6 +34,6 @@ example:
 
 ## Preview results
 
-The result of the algorithm is the file in the `.vox` format, explained here: https://github.com/ephtracy/voxel-model/tree/master
+The result of the algorithm is the file in the `.vox` format, explained [here](https://github.com/ephtracy/voxel-model/tree/master)
 
 To preview this file you need to download free voxel editor "Magical Voxel", from the [official website](https://ephtracy.github.io) then open generated file here.
