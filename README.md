@@ -1,20 +1,20 @@
-# Ocean landscape generator: Procedural generation of the underwater relief
+# Ocean landscape generator: Процедурная генерация подводного рельефа
 
-This is an iterative algorithm for generating underwater landscapes based on a model of underwater natural processes developed during my master's thesis. It is able to generate the main types of oceanic relief, such as: deep-sea basins with guyots, taking into account the process of abrasion, continental margins, taking into account the process of subduction and mid-oceanic ridges due to rifting.
+Это итеративный алгоритм создания подводных ландшафтов, основанный на модели подводных природных процессов, разработанной в ходе моей магистерской диссертации. Он способен генерировать основные типы океанического рельефа, такие как: глубоководные котловины с гайотами, учитывающие процесс абразии, континентальные окраины, учитывающие процесс субдукции, и срединно-океанические хребты, обусловленные рифтогенезом.
 
-The text of the master's thesis can be found [here](https://github.com/GitCaptain/ocean-landscape/blob/master/data/thesis.pdf)
+С текстом магистерской диссертации можно ознакомиться [здесь](https://github.com/GitCaptain/ocean-landscape/blob/master/data/thesis.pdf)
 
-## Examples
+## Примеры
 
-There are two examples of the generated landscape:
+Ниже приведены два примера сгенерированного ландшафта:
 
-![landscape1](https://github.com/GitCaptain/ocean-landscape/tree/master/data/examples/landscape.png)
+![Пример 1](https://github.com/GitCaptain/ocean-landscape/blob/master/data/examples/landscape.png)
 
-![landscape2](https://github.com/GitCaptain/ocean-landscape/blob/master/data/examples/noise_relief.png)
+![Пример 2](https://github.com/GitCaptain/ocean-landscape/blob/master/data/examples/noise_relief.png)
 
-## Build and run
+## Сборка и запуск
 
-How to build:
+Как собрать генератор:
 ```
 mkdir build
 cd build
@@ -22,18 +22,20 @@ cmake -DCMAKE_BUILD_TYPE=Release  ../src/
 make LandscapeGenerator
 ```
 
-Usage:
+Как использовать:
 ```
 ./build/LandscapeGenerator --sizex=X --sizey=Y --years=N [ --output=file ] [ --mor-cnt=cnt ] [ --basin-cnt=cnt ] [ --margin-cnt=cnt ]
 ```
 
-example:
+Пример запуска:
 ```
 ./LandscapeGenerator --sizex=500 --sizey=500 --years=300000 --output=out.vox
 ```
 
-## Preview results
+## Как посмотреть получившийся ландшафт
 
-The result of the algorithm is the file in the `.vox` format, explained [here](https://github.com/ephtracy/voxel-model/tree/master)
+Результатом работы алгоритма является файл в формате ".vox", описанный [здесь](https://github.com/ephtracy/voxel-model/tree/master)
 
-To preview this file you need to download free voxel editor "Magical Voxel", from the [official website](https://ephtracy.github.io) then open generated file here.
+Чтобы просмотреть этот файл, вам необходимо скачать бесплатный воксельный редактор "Magical Voxel" с [официального сайта](https://ephtracy.github.io) и
+открыть в нем сгенерированный файл.
+
